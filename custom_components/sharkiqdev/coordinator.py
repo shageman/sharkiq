@@ -19,6 +19,9 @@ from .const import (
 )
 from .sharkiq import SharkIqAuthError, SharkIqVacuum, get_ayla_api
 
+AUTH_BACKOFF_INITIAL = 60     # 1 minute
+AUTH_BACKOFF_MAX = 3600       # 1 hour
+
 
 class SharkIqUpdateCoordinator(DataUpdateCoordinator[Dict[str, SharkIqVacuum]]):
     """Class to manage fetching Shark IQ data."""
@@ -36,6 +39,7 @@ class SharkIqUpdateCoordinator(DataUpdateCoordinator[Dict[str, SharkIqVacuum]]):
         self._ayla_api = None
         self._region_eu = entry.data.get(CONF_REGION) == SHARKIQ_REGION_EUROPE
         self._online_serials: set[str] = set()
+        self._auth_failures: int = 0
 
     async def _async_create_api(self):
         """Create or return Ayla API client."""
@@ -71,9 +75,23 @@ class SharkIqUpdateCoordinator(DataUpdateCoordinator[Dict[str, SharkIqVacuum]]):
                     new_data[AUTH0_REFRESH_TOKEN_KEY] = new_rt
                     self.hass.config_entries.async_update_entry(self.entry, data=new_data)
 
+                # Auth succeeded — reset backoff to normal polling interval.
+                self._auth_failures = 0
+                self.update_interval = UPDATE_INTERVAL
+
             devices = await api.async_get_devices(update=True)
         except SharkIqAuthError as err:
-            raise UpdateFailed(f"Auth failed: {err}") from err
+            self._auth_failures += 1
+            self._ayla_api = None  # Force fresh auth on next cycle
+            backoff = min(
+                AUTH_BACKOFF_INITIAL * (2 ** (self._auth_failures - 1)),
+                AUTH_BACKOFF_MAX,
+            )
+            self.update_interval = timedelta(seconds=backoff)
+            raise UpdateFailed(
+                f"Auth failed: {err}. Next retry in {backoff}s "
+                f"(attempt {self._auth_failures})"
+            ) from err
         except Exception as err:
             raise UpdateFailed(f"Error fetching Shark IQ data: {err}") from err
 
