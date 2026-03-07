@@ -32,6 +32,7 @@ from .const import (
     AUTH0_REDIRECT_URI,
     AUTH0_SCOPES,
     BROWSER_USERAGENT,
+    SHARK_MOBILE_USERAGENT,
     EU_DEVICE_URL,
     EU_AUTH0_HOST,
     EU_LOGIN_URL,
@@ -183,28 +184,16 @@ class AylaApi:
     def _auth0_login_headers(self) -> Dict[str, Dict]:
         """
         Headers for the Auth0 login flow.
-        
+
         Returns:
             A dict containing the headers to send for the Auth0 login flow.
         """
         return {
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Encoding": "gzip, deflate, br, zstd",
-            "Accept-Language": "en-US,en;q=0.9",
+            "User-Agent": SHARK_MOBILE_USERAGENT,
             "Content-Type": "application/json",
-            "dnt": "1",
-            "Host": EU_AUTH0_HOST if self.europe else AUTH0_HOST,
+            "Accept": "application/json",
             "Origin": EU_AUTH0_URL if self.europe else AUTH0_URL,
-            "Priority": "u=1, i",
-            "Referrer": EU_AUTH0_URL if self.europe else AUTH0_URL + "/",
-            "Sec-Ch-Ua": '"Chrome";v="137", "Chromium";v="137", "Not A;Brand";v="24"',
-            "Sec-Ch-Ua-Mobile": "?0",
-            "Sec-Ch-Ua-Platform": '"macOS"',
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin",
-            "Sec-Gpc": "1",
-            "User-Agent": BROWSER_USERAGENT
+            "Host": EU_AUTH0_HOST if self.europe else AUTH0_HOST,
         }
     
     @property
@@ -288,10 +277,15 @@ class AylaApi:
             "password": self._password,
             "scope": AUTH0_SCOPES,
         }
+        auth0_headers = {
+            "User-Agent": SHARK_MOBILE_USERAGENT,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
         async with ayla_client.post(
             token_url,
             json=payload,
-            headers={"Content-Type": "application/json"},
+            headers=auth0_headers,
             ssl=self.verify_ssl,
             timeout=15,
         ) as resp:
@@ -417,10 +411,15 @@ class AylaApi:
             "client_id": EU_AUTH0_CLIENT_ID if self.europe else AUTH0_CLIENT_ID,
             "refresh_token": self._auth0_refresh_token,
         }
+        auth0_headers = {
+            "User-Agent": SHARK_MOBILE_USERAGENT,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
         async with ayla_client.post(
             token_url,
             json=payload,
-            headers={"Content-Type": "application/json"},
+            headers=auth0_headers,
             ssl=self.verify_ssl,
             timeout=15,
         ) as resp:
@@ -482,10 +481,15 @@ class AylaApi:
             "code": code,
             "redirect_uri": AUTH0_REDIRECT_URI,
         }
+        auth0_headers = {
+            "User-Agent": SHARK_MOBILE_USERAGENT,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
         async with ayla_client.post(
             token_url,
             json=payload,
-            headers={"Content-Type": "application/json"},
+            headers=auth0_headers,
             ssl=self.verify_ssl,
             timeout=15,
         ) as resp:

@@ -9,7 +9,8 @@ from .const import (
     EU_AUTH0_URL,
     AUTH0_CLIENT_ID,
     AUTH0_REDIRECT_URI,
-    AUTH0_SCOPES
+    AUTH0_SCOPES,
+    SHARK_MOBILE_USERAGENT,
 )
 
 from .exc import SharkIqAuthError
@@ -28,12 +29,9 @@ class Auth0Client:
         SCOPE = AUTH0_SCOPES
 
         HEADERS = {
-            "User-Agent": (
-                "Mozilla/5.0 (Linux; Android 10; K) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/139.0.0.0 Mobile Safari/537.36"
-            ),
+            "User-Agent": SHARK_MOBILE_USERAGENT,
             "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json",
             "Origin": AUTH_DOMAIN,
             "Referer": AUTH_DOMAIN + "/",
         }
@@ -111,8 +109,13 @@ class Auth0Client:
             "code": code,
             "redirect_uri": REDIRECT_URI,
         }
+        token_headers = {
+            "User-Agent": SHARK_MOBILE_USERAGENT,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
         async with session.post(
-            token_url, headers={"Content-Type": "application/json"}, json=payload
+            token_url, headers=token_headers, json=payload
         ) as resp:
             token_data = await resp.json()
 
