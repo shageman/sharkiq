@@ -10,6 +10,7 @@ from .const import (
     AUTH0_CLIENT_ID,
     AUTH0_REDIRECT_URI,
     AUTH0_SCOPES,
+    SHARK_AUTH0_HEADERS,
     SHARK_MOBILE_USERAGENT,
 )
 
@@ -109,13 +110,8 @@ class Auth0Client:
             "code": code,
             "redirect_uri": REDIRECT_URI,
         }
-        token_headers = {
-            "User-Agent": SHARK_MOBILE_USERAGENT,
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        }
         async with session.post(
-            token_url, headers=token_headers, json=payload
+            token_url, headers=SHARK_AUTH0_HEADERS, json=payload
         ) as resp:
             token_data = await resp.json()
 

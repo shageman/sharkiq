@@ -13,6 +13,12 @@ SHARK_APP_ID = "ios_shark_prod-3A-id"
 SHARK_APP_SECRET = "ios_shark_prod-74tFWGNg34LQCmR0m45SsThqrqs"
 SHARK_APP_USERAGENT = "SharkClean/29562 Darwin/24.3.0"
 SHARK_MOBILE_USERAGENT = "SharkClean/3.0.0 (iPhone; iOS 17.0; Scale/3.00)"
+# Shared base headers for all Auth0-facing requests.
+SHARK_AUTH0_HEADERS = {
+    "User-Agent": SHARK_MOBILE_USERAGENT,
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+}
 BROWSER_USERAGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
 EU_AUTH0_URL = "https://logineu.sharkninja.com"
 EU_AUTH0_HOST = "logineu.sharkninja.com"
