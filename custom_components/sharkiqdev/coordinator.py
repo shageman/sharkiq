@@ -55,15 +55,21 @@ class SharkIqUpdateCoordinator(DataUpdateCoordinator[Dict[str, SharkIqVacuum]]):
         """Fetch data from Shark IQ."""
         api = await self._async_create_api()
         try:
-            await api.async_sign_in()
+            # Only re-authenticate when the token is missing, expired, or
+            # expiring within the next 600 seconds.  token_expiring_soon also
+            # returns True when we have never authenticated (auth_expiration is
+            # None), so the very first call is always made.
+            if api.token_expiring_soon:
+                LOGGER.debug("Ayla token expired or expiring soon, re-authenticating")
+                await api.async_sign_in()
 
-            # Persist rotated Auth0 refresh token so it survives restarts.
-            new_rt = getattr(api, "auth0_refresh_token", None)
-            current_rt = self.entry.data.get(AUTH0_REFRESH_TOKEN_KEY)
-            if new_rt and new_rt != current_rt:
-                new_data = dict(self.entry.data)
-                new_data[AUTH0_REFRESH_TOKEN_KEY] = new_rt
-                self.hass.config_entries.async_update_entry(self.entry, data=new_data)
+                # Persist rotated Auth0 refresh token so it survives restarts.
+                new_rt = getattr(api, "auth0_refresh_token", None)
+                current_rt = self.entry.data.get(AUTH0_REFRESH_TOKEN_KEY)
+                if new_rt and new_rt != current_rt:
+                    new_data = dict(self.entry.data)
+                    new_data[AUTH0_REFRESH_TOKEN_KEY] = new_rt
+                    self.hass.config_entries.async_update_entry(self.entry, data=new_data)
 
             devices = await api.async_get_devices(update=True)
         except SharkIqAuthError as err:
