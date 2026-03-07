@@ -178,13 +178,13 @@ class SharkIqConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            _, errors = await self._async_validate_input(user_input)
+            info, errors = await self._async_validate_input(user_input)
 
             if not errors:
                 errors = {"base": "unknown"}
                 if entry := await self.async_set_unique_id(self.unique_id):
                     data = dict(self._pending_user_input)
-                    rt = data.get(AUTH0_REFRESH_TOKEN_KEY)
+                    rt = info.get(AUTH0_REFRESH_TOKEN_KEY) if info else None
                     if rt:
                         data[AUTH0_REFRESH_TOKEN_KEY] = rt
                     data.pop("force_interactive_debug", None)
