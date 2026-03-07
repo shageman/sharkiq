@@ -102,10 +102,11 @@ def _macos_applescript_source(capture_file: str) -> str:
 
     The applet writes the received URL to *capture_file* and quits.
     """
+    safe_path = capture_file.replace('"', '\\"')
     return textwrap.dedent(f"""\
         on open location this_URL
             try
-                set captureFile to POSIX file "{capture_file}"
+                set captureFile to POSIX file "{safe_path}"
                 set fRef to open for access captureFile with write permission
                 write this_URL to fRef as <<class utf8>>
                 close access fRef
@@ -331,16 +332,18 @@ def cleanup_linux(tmp_dir: str) -> None:
     except Exception:
         pass
 
-    # Best-effort reset of xdg-mime.  If there was a previous handler we
-    # cannot easily restore it, so we simply remove ours.
+    # Remove the dangling association from mimeapps.list if possible.
+    mimeapps = os.path.expanduser("~/.config/mimeapps.list")
     try:
-        subprocess.run(
-            [
-                "xdg-mime", "default", "",
-                f"x-scheme-handler/{PROTOCOL}",
-            ],
-            check=False, capture_output=True,
-        )
+        if os.path.isfile(mimeapps):
+            with open(mimeapps, "r") as f:
+                lines = f.readlines()
+            with open(mimeapps, "w") as f:
+                for line in lines:
+                    if not line.startswith(
+                        f"x-scheme-handler/{PROTOCOL}="
+                    ):
+                        f.write(line)
     except Exception:
         pass
 
@@ -392,6 +395,17 @@ def main() -> None:
 
     if not login_url:
         print("ERROR: No URL provided.", file=sys.stderr)
+        sys.exit(1)
+
+    if not login_url.startswith(("http://", "https://")):
+        print(
+            "ERROR: The URL should start with https://",
+            file=sys.stderr,
+        )
+        print(
+            "Make sure you're pasting the Auth0 *login* URL, "
+            "not the redirect URL."
+        )
         sys.exit(1)
 
     system = platform.system()
