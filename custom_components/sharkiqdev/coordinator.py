@@ -56,6 +56,15 @@ class SharkIqUpdateCoordinator(DataUpdateCoordinator[Dict[str, SharkIqVacuum]]):
         api = await self._async_create_api()
         try:
             await api.async_sign_in()
+
+            # Persist rotated Auth0 refresh token so it survives restarts.
+            new_rt = getattr(api, "auth0_refresh_token", None)
+            current_rt = self.entry.data.get(AUTH0_REFRESH_TOKEN_KEY)
+            if new_rt and new_rt != current_rt:
+                new_data = dict(self.entry.data)
+                new_data[AUTH0_REFRESH_TOKEN_KEY] = new_rt
+                self.hass.config_entries.async_update_entry(self.entry, data=new_data)
+
             devices = await api.async_get_devices(update=True)
         except SharkIqAuthError as err:
             raise UpdateFailed(f"Auth failed: {err}") from err
