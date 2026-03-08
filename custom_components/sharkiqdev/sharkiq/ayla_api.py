@@ -695,10 +695,17 @@ class AylaApi:
         Returns:
             A list of devices.
         """
-        async with await self.async_request("get", f"{EU_DEVICE_URL if self.europe else DEVICE_URL:s}/apiv1/devices.json") as resp:
-            devices = await resp.json()
+        device_url = EU_DEVICE_URL if self.europe else DEVICE_URL
+        import logging
+        _LOGGER = logging.getLogger(__name__)
+        _LOGGER.warning("Fetching devices from %s/apiv1/devices.json", device_url)
+        async with await self.async_request("get", f"{device_url:s}/apiv1/devices.json") as resp:
+            raw_text = await resp.text()
+            _LOGGER.warning("Ayla devices.json response (status=%s): %s", resp.status, raw_text[:2000])
+            devices = json.loads(raw_text)
             if resp.status == 401:
                 raise SharkIqAuthError(devices["error"]["message"])
+        _LOGGER.warning("Found %d device(s)", len(devices))
         return [d["device"] for d in devices]
 
     def get_devices(self, update: bool = True) -> List[SharkIqVacuum]:
